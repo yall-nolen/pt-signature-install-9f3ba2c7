@@ -7,42 +7,6 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="referrer" content="no-referrer">
 <style>
-  /* Gate. Not real security — the page contents are in the source either way. It stops
-     someone who was handed the link casually from opening it. Nolen knows this. */
-  #gate {
-    position: fixed; inset: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--bg); padding: 24px;
-  }
-  #gate.hidden { display: none; }
-  .gate-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-top: 4px solid var(--red); border-radius: 8px;
-    padding: 28px; max-width: 380px; width: 100%;
-  }
-  .gate-brand { display: flex; align-items: baseline; gap: 9px; margin-bottom: 18px; }
-  .gate-brand span:first-child { color: var(--red); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
-  .gate-brand span:last-child { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
-  .gate-card h2 { margin: 0 0 6px; font-size: 17px; }
-  .gate-card p { margin: 0 0 18px; font-size: 13px; color: var(--text-muted); }
-  .gate-card form { display: flex; gap: 8px; }
-  .gate-card input {
-    flex: 1; font: inherit; font-size: 14px; padding: 10px 12px;
-    border: 1px solid var(--border); border-radius: 6px;
-    background: var(--bg); color: var(--text);
-  }
-  .gate-card input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
-  .gate-card button {
-    font: inherit; font-size: 14px; font-weight: 700; padding: 10px 18px;
-    border: none; border-radius: 6px; background: var(--red); color: #fff; cursor: pointer;
-  }
-  .gate-error { margin: 12px 0 0; font-size: 13px; color: var(--red); font-weight: 600; min-height: 18px; }
-
-  /* Hidden by default so nothing flashes on screen before the gate script runs.
-     body:not(.unlocked) outranks the plain .topbar/main rules regardless of source order. */
-  body:not(.unlocked) .topbar,
-  body:not(.unlocked) main,
-  body:not(.unlocked) footer { display: none; }
   :root {
     --red: #c8202e;
     --red-dim: #9c1826;
@@ -154,19 +118,6 @@
 <body>
 
 
-<div id="gate">
-  <div class="gate-card">
-    <div class="gate-brand"><span>P</span><span>Purpose Transportation</span></div>
-    <h2>Signature install</h2>
-    <p>Enter the password to continue.</p>
-    <form id="gateForm">
-      <input type="password" id="gatePw" autocomplete="current-password" autofocus aria-label="Password">
-      <button type="submit">Open</button>
-    </form>
-    <p class="gate-error" id="gateError" role="alert"></p>
-  </div>
-</div>
-
 <div class="topbar">
   <div class="brand"><span class="brand-mark">P</span><h1>Purpose Transportation — Signature Install</h1></div>
   <span class="count" id="rowCount"></span>
@@ -215,7 +166,7 @@ const WEBSITE_LINE =
 const BEST_REGARDS = `<p style="${P}">Best Regards, </p>`;
 
 const QUOTE_NOTICE =
-  `<p style="${PGAP}"><b><span style="font-size:9.0pt">ALL QUOTES ARE BASED OFF INFORMATION PROVIDED BY OUR NETWORK OF CARRIERS AND POSTED MARKET RATES AT THE TIME OF YOUR REQUEST.&nbsp; <span style="color:#EE0000">DUE TO THE CONSTANT FLUXUATION OF FUEL, TRUCKLOAD AND PARTIAL TRUCKLOAD QUOTES ARE ONLY GOOD FOR 48 HOURS</span>.&nbsp; &nbsp;<u>PLEASE NOTE</u>, A CARRIER HAS NOT BEEN SECURED FOR A QUOTE ONLY INQUIRY. &nbsp;QUOTED RATES ARE SUBJECT TO CHANGE AT ANY TIME BASED ON CURRENT CARRIER AVAILABILITY. &nbsp;YOU AGREE TO OUR TERMS AND CONDITIONS. &nbsp;SEE </span></b><a href="http://www.purposetransportation.com/"><b><span style="font-size:9.0pt;color:#467886">www.purposetransportation.com</span></b></a><b><span style="font-size:9.0pt"> FOR OUR TERMS AND CONDITIONS.</span></b></p>` +
+  `<p style="${PGAP}"><b><span style="font-size:9.0pt">ALL QUOTES ARE BASED ON INFORMATION PROVIDED BY OUR NETWORK OF CARRIERS AND POSTED MARKET RATES AT THE TIME OF YOUR REQUEST.&nbsp; <span style="color:#EE0000">DUE TO THE CONSTANT FLUCTUATION OF FUEL, TRUCKLOAD AND PARTIAL TRUCKLOAD QUOTES ARE ONLY GOOD FOR 48 HOURS</span>.&nbsp; &nbsp;<u>PLEASE NOTE</u>, A CARRIER HAS NOT BEEN SECURED FOR A QUOTE ONLY INQUIRY. &nbsp;QUOTED RATES ARE SUBJECT TO CHANGE AT ANY TIME BASED ON CURRENT CARRIER AVAILABILITY. &nbsp;YOU AGREE TO OUR TERMS AND CONDITIONS. &nbsp;SEE </span></b><a href="http://www.purposetransportation.com/"><b><span style="font-size:9.0pt;color:#467886">www.purposetransportation.com</span></b></a><b><span style="font-size:9.0pt"> FOR OUR TERMS AND CONDITIONS.</span></b></p>` +
   `<p style="${PGAP}"><span style="font-size:9.0pt">NAICS: 488510, 484121, 484122, 484220, 484230, 493110&nbsp;</span></p>`;
 
 const CONFIDENTIALITY =
@@ -363,45 +314,6 @@ function renderRows() {
 }
 
 renderRows();
-
-// ---- Gate ----
-const PW_HASH = "82952124099bb07400ff8eb7807507c1f58bb0bbbc343d383a55406e75eedfa1";
-const gate = document.getElementById("gate");
-const gateForm = document.getElementById("gateForm");
-const gatePw = document.getElementById("gatePw");
-const gateError = document.getElementById("gateError");
-
-async function sha256Hex(text) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function unlock() {
-  document.body.classList.add("unlocked");
-  gate.classList.add("hidden");
-}
-
-if (sessionStorage.getItem("pt-sig-unlocked") === "1") unlock();
-
-gateForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  gateError.textContent = "";
-  let hash;
-  try {
-    hash = await sha256Hex(gatePw.value.trim().toLowerCase());
-  } catch (err) {
-    gateError.textContent = "This browser blocked the password check. Try Chrome.";
-    return;
-  }
-  if (hash === PW_HASH) {
-    sessionStorage.setItem("pt-sig-unlocked", "1");
-    unlock();
-  } else {
-    gateError.textContent = "That password is not right.";
-    gatePw.value = "";
-    gatePw.focus();
-  }
-});
 </script>
 
 </body>
