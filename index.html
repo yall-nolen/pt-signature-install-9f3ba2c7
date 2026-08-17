@@ -182,8 +182,12 @@ function signatureHTML(person, withHeadshot) {
   // Ted and Paul: pictures only, nothing above or below them.
   if (person.minimal) return imageLine;
 
+  // The fine print rides together. If you don't carry the quote notice, you don't
+  // carry the confidentiality block either. Nolen's call 2026-08-17: the
+  // confidentiality paragraph is not enforceable, so the only people it stays on
+  // are the ones whose signature already has real terms above it.
   return WEBSITE_LINE + BEST_REGARDS + imageLine +
-    (person.ops ? QUOTE_NOTICE : "") + CONFIDENTIALITY;
+    (person.ops ? QUOTE_NOTICE + CONFIDENTIALITY : "");
 }
 
 // Returns true only if the clipboard actually took the data. Never fails silently:
