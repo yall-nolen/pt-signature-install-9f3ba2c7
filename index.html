@@ -192,7 +192,29 @@ function signatureHTML(person, withHeadshot) {
 
 // Returns true only if the clipboard actually took the data. Never fails silently:
 // a false return puts the signature on screen so it can be selected and copied by hand.
-function copyRichHTML(html) {
+//
+// Two paths on purpose. execCommand is the desktop path and has worked since day one, but
+// iOS Safari ignores it on an element the page created and removed, so the button reported
+// "Copied" on a phone and put nothing on the clipboard. The async Clipboard API is the path
+// iPhones honour, so it is tried first and execCommand stays underneath it for anything old.
+async function copyRichHTML(html) {
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      const scratch = document.createElement("div");
+      scratch.innerHTML = html;
+      const plainText = scratch.innerText || scratch.textContent || "";
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plainText], { type: "text/plain" })
+        })
+      ]);
+      return true;
+    } catch (err) {
+      // Blocked or unsupported. Fall through to the desktop path below.
+    }
+  }
+
   const container = document.createElement("div");
   container.className = "sig-source";
   container.setAttribute("contenteditable", "true");
@@ -278,7 +300,7 @@ function renderRows() {
     container.appendChild(row);
   });
 
-  container.addEventListener("click", (e) => {
+  container.addEventListener("click", async (e) => {
     const copyBtn = e.target.closest(".copy-btn");
     if (copyBtn) {
       const row = copyBtn.closest(".row");
@@ -290,7 +312,7 @@ function renderRows() {
       const status = row.querySelector('[data-role="status"]');
       const manual = row.querySelector('[data-role="manual"]');
 
-      const ok = copyRichHTML(html);
+      const ok = await copyRichHTML(html);
 
       if (ok) {
         manual.style.display = "none";
@@ -307,7 +329,7 @@ function renderRows() {
       } else {
         status.className = "status status-fail";
         status.textContent = "The browser blocked the copy. The " + label.toLowerCase() +
-          " signature is below — select all of it and press Cmd+C, then paste into Outlook.";
+          " signature is below — select all of it and copy it (Cmd+C on a computer, long-press then Select All on a phone), then paste into Outlook.";
         manual.innerHTML = '<div class="manual-label">Select everything in this box and copy it</div>' +
           '<div class="manual-box" contenteditable="true">' + html + "</div>";
         manual.style.display = "block";
