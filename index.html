@@ -197,12 +197,17 @@ function signatureHTML(person, withHeadshot) {
 // iOS Safari ignores it on an element the page created and removed, so the button reported
 // "Copied" on a phone and put nothing on the clipboard. The async Clipboard API is the path
 // iPhones honour, so it is tried first and execCommand stays underneath it for anything old.
-async function copyRichHTML(html) {
+// Kelley and Ted are pictures only, no words, so the plain-text flavour of the clipboard
+// came out empty. Android offers "Paste" only when the clipboard carries text, so their
+// signature copied fine and then no Paste option appeared anywhere on the phone. The
+// pictures ride in text/html either way; this just gives the phone something to see.
+async function copyRichHTML(html, plainFallback) {
   if (navigator.clipboard && window.ClipboardItem) {
     try {
       const scratch = document.createElement("div");
       scratch.innerHTML = html;
-      const plainText = scratch.innerText || scratch.textContent || "";
+      let plainText = scratch.innerText || scratch.textContent || "";
+      if (!plainText.trim()) plainText = plainFallback;
       await navigator.clipboard.write([
         new ClipboardItem({
           "text/html": new Blob([html], { type: "text/html" }),
@@ -221,7 +226,8 @@ async function copyRichHTML(html) {
   container.innerHTML = html;
   document.body.appendChild(container);
 
-  const plain = container.innerText;
+  let plain = container.innerText;
+  if (!plain.trim()) plain = plainFallback;
   const range = document.createRange();
   range.selectNodeContents(container);
   const sel = window.getSelection();
@@ -312,7 +318,7 @@ function renderRows() {
       const status = row.querySelector('[data-role="status"]');
       const manual = row.querySelector('[data-role="manual"]');
 
-      const ok = await copyRichHTML(html);
+      const ok = await copyRichHTML(html, person.name + "\n" + person.title);
 
       if (ok) {
         manual.style.display = "none";
