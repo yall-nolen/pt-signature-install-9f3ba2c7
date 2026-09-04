@@ -320,14 +320,27 @@ function renderRows() {
 
       const ok = await copyRichHTML(html, person.name + "\n" + person.title);
 
+      // A phone can report a clean copy and still leave Outlook with no Paste option.
+      // Proving otherwise costs a clipboard-read permission prompt, so instead the
+      // signature is always left on screen on touch devices as a hand-copy path that
+      // needs no permission and works on any phone.
+      const onPhone = window.matchMedia("(hover: none)").matches;
+
       if (ok) {
-        manual.style.display = "none";
-        manual.innerHTML = "";
         copyBtn.classList.add("copied");
         const original = copyBtn.textContent.trim();
         copyBtn.lastChild.textContent = " Copied";
         status.className = "status";
         status.textContent = label + " signature copied. Paste it into Outlook's signature box.";
+
+        if (onPhone) {
+          manual.innerHTML = '<div class="manual-label">No Paste option in Outlook? Long-press inside this box, tap Select All, tap Copy, then paste again.</div>' +
+            '<div class="manual-box" contenteditable="true">' + html + "</div>";
+          manual.style.display = "block";
+        } else {
+          manual.style.display = "none";
+          manual.innerHTML = "";
+        }
         setTimeout(() => {
           copyBtn.classList.remove("copied");
           copyBtn.lastChild.textContent = " " + original;
