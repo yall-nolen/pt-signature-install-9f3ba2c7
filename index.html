@@ -192,14 +192,24 @@ function signatureHTML(person, withHeadshot) {
 
 // Returns true only if the clipboard actually took the data. Never fails silently:
 // a false return puts the signature on screen so it can be selected and copied by hand.
-function copyRichHTML(html) {
+async function copyRichHTML(html, plainFallback) {
+  // ORDER MATTERS. The desktop path is a real selection copy with the clipboard
+  // data overridden in the copy event, and it is the one Outlook takes cleanly.
+  // On 2026-09-04 the async Clipboard API was put in FRONT of it for iPhones,
+  // and because that call succeeds on desktop Chrome the path below stopped
+  // running at all. So it stays first, and the phone path sits underneath it.
   const container = document.createElement("div");
   container.className = "sig-source";
   container.setAttribute("contenteditable", "true");
   container.innerHTML = html;
   document.body.appendChild(container);
 
-  const plain = container.innerText;
+  // Kelley and Ted are pictures with no words, so innerText comes out empty and
+  // Android then offers no Paste option anywhere. plainFallback gives the phone
+  // something to see. The pictures ride in text/html either way.
+  let plain = container.innerText;
+  if (!plain.trim()) plain = plainFallback;
+
   const range = document.createRange();
   range.selectNodeContents(container);
   const sel = window.getSelection();
@@ -227,7 +237,25 @@ function copyRichHTML(html) {
   sel.removeAllRanges();
   document.body.removeChild(container);
 
-  return wrote || cmdOk;
+  if (wrote || cmdOk) return true;
+
+  // Phones. iOS Safari ignores execCommand on an element the page created and
+  // removed, so the async Clipboard API is what an iPhone honours.
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plain], { type: "text/plain" })
+        })
+      ]);
+      return true;
+    } catch (err) {
+      // Blocked or unsupported. The on-screen hand-copy box below is the floor.
+    }
+  }
+
+  return false;
 }
 
 function renderRows() {
@@ -278,7 +306,7 @@ function renderRows() {
     container.appendChild(row);
   });
 
-  container.addEventListener("click", (e) => {
+  container.addEventListener("click", async (e) => {
     const copyBtn = e.target.closest(".copy-btn");
     if (copyBtn) {
       const row = copyBtn.closest(".row");
@@ -290,7 +318,7 @@ function renderRows() {
       const status = row.querySelector('[data-role="status"]');
       const manual = row.querySelector('[data-role="manual"]');
 
-      const ok = copyRichHTML(html);
+      const ok = await copyRichHTML(html, person.name + "\n" + person.title);
 
       if (ok) {
         manual.style.display = "none";
