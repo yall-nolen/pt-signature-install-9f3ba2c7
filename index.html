@@ -207,24 +207,14 @@ function signatureHTML(person, withHeadshot) {
 // signature copied fine and then no Paste option appeared anywhere on the phone. The
 // pictures ride in text/html either way; this just gives the phone something to see.
 async function copyRichHTML(html, plainFallback) {
-  if (navigator.clipboard && window.ClipboardItem) {
-    try {
-      const scratch = document.createElement("div");
-      scratch.innerHTML = html;
-      let plainText = scratch.innerText || scratch.textContent || "";
-      if (!plainText.trim()) plainText = plainFallback;
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" }),
-          "text/plain": new Blob([plainText], { type: "text/plain" })
-        })
-      ]);
-      return true;
-    } catch (err) {
-      // Blocked or unsupported. Fall through to the desktop path below.
-    }
-  }
-
+  // ORDER MATTERS, AND GETTING IT WRONG IS WHAT BROKE THIS (2026-09-08).
+  // The desktop path is a real selection copy with the clipboard data overridden
+  // in the copy event. That is what shipped from day one and what Outlook took.
+  // On 2026-09-04 the async Clipboard API was put in FRONT of it for iPhones, and
+  // because that call succeeds on desktop Chrome, the path below stopped running
+  // at all. Signatures pasted into Outlook flat black from that day on.
+  // So: execCommand first, always. The Clipboard API is the fallback for phones,
+  // where execCommand on a page-created element is ignored.
   const container = document.createElement("div");
   container.className = "sig-source";
   container.setAttribute("contenteditable", "true");
@@ -260,7 +250,30 @@ async function copyRichHTML(html, plainFallback) {
   sel.removeAllRanges();
   document.body.removeChild(container);
 
-  return wrote || cmdOk;
+  if (wrote || cmdOk) return true;
+
+  // Phones only. Kelley and Ted are pictures with no words, so the plain-text
+  // flavour came out empty and Android showed no Paste option; plainFallback
+  // gives the phone something to see. The pictures ride in text/html either way.
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      const scratch = document.createElement("div");
+      scratch.innerHTML = html;
+      let plainText = scratch.innerText || scratch.textContent || "";
+      if (!plainText.trim()) plainText = plainFallback;
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plainText], { type: "text/plain" })
+        })
+      ]);
+      return true;
+    } catch (err) {
+      // Blocked or unsupported. Fall through to the on-screen hand-copy path.
+    }
+  }
+
+  return false;
 }
 
 function renderRows() {
