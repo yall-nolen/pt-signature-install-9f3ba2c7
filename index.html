@@ -144,7 +144,9 @@
   15 people. Built letter-for-letter off Wayne's live signature, read out of the source of an
   email he actually sent. Headshots are the illustrated versions. Jeffrey Allen has no headshot
   on file yet, so his is the card on its own. Ted and Kelley copy pictures only, nothing above
-  or below. Pictures travel inside the copy, so nothing has to load from a website later.
+  or below. On a computer the pictures travel inside the copy; on a phone they are links to
+  the same files, because a phone packs an embedded picture into the message in a way Gmail
+  will not display. Same pictures either way.
 </footer>
 
 <script>
@@ -178,11 +180,27 @@ const QUOTE_NOTICE =
 const CONFIDENTIALITY =
   `<p style="${P}"><span style="font-size:8.0pt;font-family:${FAMILY};color:#000000">This email and any attachments may contain privileged or confidential information, and you must not read, copy, store or disclose them unless they are intended for you or&nbsp;your organization or you have received prior permission. If received in error, please delete and contact the sender. Unless stated to the contrary, any opinions or comments&nbsp;are personal to the writer and do not necessarily represent the official view of the Company. While we have taken every precaution to minimize the risk of computer viruses,&nbsp;we cannot accept any liability for such viruses, and you should carry out your own virus checks before opening any attachments contained in this email.</span></p>`;
 
+const IMG_BASE = /^https?:/.test(location.href)
+  ? location.href.replace(/[^/]*$/, "") + "img/"
+  : "https://yall-nolen.github.io/pt-signature-install-9f3ba2c7/img/";
+
+const slugOf = (n) => n.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+
+// On a phone, point at the hosted file. On a computer, carry the picture inside the copy.
+function imgSrc(person, kind) {
+  const uri = kind === "card" ? person.card : person.headshot;
+  if (!IS_PHONE) return uri;
+  // The hosted file was extracted from this exact data URI, so the type matches by
+  // construction. Reading it beats assuming .jpg: Victory Aero has a .png headshot.
+  const ext = uri.slice(0, 20).indexOf("png") > -1 ? "png" : "jpg";
+  return IMG_BASE + slugOf(person.name) + "-" + kind + "." + ext;
+}
+
 function signatureHTML(person, withHeadshot) {
   const headshotImg = (withHeadshot && person.headshot)
-    ? `<img border="0" width="151" height="189" style="width:151px;height:189px;max-width:151px;max-height:189px" src="${person.headshot}" alt="">`
+    ? `<img border="0" width="151" height="189" style="width:151px;height:189px;max-width:151px;max-height:189px" src="${imgSrc(person, 'headshot')}" alt="">`
     : "";
-  const cardImg = `<img border="0" width="378" height="189" style="width:378px;height:189px;max-width:378px;max-height:189px" src="${person.card}" alt="">`;
+  const cardImg = `<img border="0" width="378" height="189" style="width:378px;height:189px;max-width:378px;max-height:189px" src="${imgSrc(person, 'card')}" alt="">`;
   const imageLine = `<p style="${P}">${headshotImg}${cardImg}</p>`;
 
   // Ted and Paul: pictures only, nothing above or below them.
