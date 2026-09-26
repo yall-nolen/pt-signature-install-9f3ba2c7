@@ -154,29 +154,35 @@ const PEOPLE = [{"name": "Wayne Nutt", "title": "SVP Global Logistics & Finance"
 // email he sent on 2026-07-15 (Gmail message 19f6648a1882fe47). Base type is Aptos 12pt,
 // the 48-hour clause is #EE0000, PLEASE NOTE is underlined, and the website line and
 // "Best Regards," sit ABOVE the pictures, which is where his actually puts them.
-const P = 'margin:0in;font-size:12.0pt;font-family:Aptos,sans-serif;';
+// One font stack and one explicit colour, because a device that does not have Aptos
+// otherwise picks its own default sans (Helvetica on an iPhone, Roboto on a Samsung)
+// and the fine print then wraps on different lines and the block is a different height.
+// Aptos ships with Microsoft 365 only. Calibri is the Office fallback, Arial and
+// Helvetica exist everywhere. The sizes and the colours are unchanged.
+const FAMILY = 'Aptos,Calibri,Arial,Helvetica,sans-serif';
+const P = `margin:0;font-size:12.0pt;font-family:${FAMILY};color:#000000;`;
 // Wayne gets his blank lines from empty spacer paragraphs. Outlook throws empty paragraphs
 // away on paste (confirmed 2026-08-11 — they were in the copied HTML and gone after pasting),
 // so the same gap is carried as a real bottom margin, which survives.
-const PGAP = 'margin:0in 0in 12.0pt 0in;font-size:12.0pt;font-family:Aptos,sans-serif;';
+const PGAP = `margin:0 0 12.0pt 0;font-size:12.0pt;font-family:${FAMILY};color:#000000;`;
 
 const WEBSITE_LINE =
-  `<p style="${P}">Website:&nbsp; <a href="http://www.purposetransportation.com/"><span style="color:#467886">Purpose Transportation</span></a></p>`;
+  `<p style="${P}">Website:&nbsp; <a href="http://www.purposetransportation.com/"><span style="font-size:12.0pt;font-family:${FAMILY};color:#467886">Purpose Transportation</span></a></p>`;
 
 const BEST_REGARDS = `<p style="${P}">Best Regards, </p>`;
 
 const QUOTE_NOTICE =
-  `<p style="${PGAP}"><b><span style="font-size:9.0pt">ALL QUOTES ARE BASED OFF INFORMATION PROVIDED BY OUR NETWORK OF CARRIERS AND POSTED MARKET RATES AT THE TIME OF YOUR REQUEST.&nbsp; <span style="color:#EE0000">DUE TO THE CONSTANT FLUCTUATION OF FUEL, TRUCKLOAD AND PARTIAL TRUCKLOAD QUOTES ARE ONLY GOOD FOR 48 HOURS</span>.&nbsp; &nbsp;<u>PLEASE NOTE</u>, A CARRIER HAS NOT BEEN SECURED FOR A QUOTE ONLY INQUIRY. &nbsp;QUOTED RATES ARE SUBJECT TO CHANGE AT ANY TIME BASED ON CURRENT CARRIER AVAILABILITY. &nbsp;YOU AGREE TO OUR TERMS AND CONDITIONS. &nbsp;SEE </span></b><a href="http://www.purposetransportation.com/"><b><span style="font-size:9.0pt;color:#467886">www.purposetransportation.com</span></b></a><b><span style="font-size:9.0pt"> FOR OUR TERMS AND CONDITIONS.</span></b></p>` +
-  `<p style="${PGAP}"><span style="font-size:9.0pt">NAICS: 488510, 484121, 484122, 484220, 484230, 493110&nbsp;</span></p>`;
+  `<p style="${PGAP}"><b><span style="font-size:9.0pt;font-family:${FAMILY};color:#000000">ALL QUOTES ARE BASED OFF INFORMATION PROVIDED BY OUR NETWORK OF CARRIERS AND POSTED MARKET RATES AT THE TIME OF YOUR REQUEST.&nbsp; </span><span style="font-size:9.0pt;font-family:${FAMILY};color:#EE0000">DUE TO THE CONSTANT FLUCTUATION OF FUEL, TRUCKLOAD AND PARTIAL TRUCKLOAD QUOTES ARE ONLY GOOD FOR 48 HOURS</span><span style="font-size:9.0pt;font-family:${FAMILY};color:#000000">.&nbsp; &nbsp;<u>PLEASE NOTE</u>, A CARRIER HAS NOT BEEN SECURED FOR A QUOTE ONLY INQUIRY. &nbsp;QUOTED RATES ARE SUBJECT TO CHANGE AT ANY TIME BASED ON CURRENT CARRIER AVAILABILITY. &nbsp;YOU AGREE TO OUR TERMS AND CONDITIONS. &nbsp;SEE </span></b><a href="http://www.purposetransportation.com/"><b><span style="font-size:9.0pt;font-family:${FAMILY};color:#467886">www.purposetransportation.com</span></b></a><b><span style="font-size:9.0pt;font-family:${FAMILY};color:#000000"> FOR OUR TERMS AND CONDITIONS.</span></b></p>` +
+  `<p style="${PGAP}"><span style="font-size:9.0pt;font-family:${FAMILY};color:#000000">NAICS: 488510, 484121, 484122, 484220, 484230, 493110&nbsp;</span></p>`;
 
 const CONFIDENTIALITY =
-  `<p style="${P}"><span style="font-size:8.0pt">This email and any attachments may contain privileged or confidential information, and you must not read, copy, store or disclose them unless they are intended for you or&nbsp;your organization or you have received prior permission. If received in error, please delete and contact the sender. Unless stated to the contrary, any opinions or comments&nbsp;are personal to the writer and do not necessarily represent the official view of the Company. While we have taken every precaution to minimize the risk of computer viruses,&nbsp;we cannot accept any liability for such viruses, and you should carry out your own virus checks before opening any attachments contained in this email.</span></p>`;
+  `<p style="${P}"><span style="font-size:8.0pt;font-family:${FAMILY};color:#000000">This email and any attachments may contain privileged or confidential information, and you must not read, copy, store or disclose them unless they are intended for you or&nbsp;your organization or you have received prior permission. If received in error, please delete and contact the sender. Unless stated to the contrary, any opinions or comments&nbsp;are personal to the writer and do not necessarily represent the official view of the Company. While we have taken every precaution to minimize the risk of computer viruses,&nbsp;we cannot accept any liability for such viruses, and you should carry out your own virus checks before opening any attachments contained in this email.</span></p>`;
 
 function signatureHTML(person, withHeadshot) {
   const headshotImg = (withHeadshot && person.headshot)
-    ? `<img border="0" width="151" height="189" style="width:1.5729in;height:1.9687in" src="${person.headshot}" alt="">`
+    ? `<img border="0" width="151" height="189" style="width:151px;height:189px;max-width:151px;max-height:189px" src="${person.headshot}" alt="">`
     : "";
-  const cardImg = `<img border="0" width="378" height="189" style="width:3.9375in;height:1.9687in" src="${person.card}" alt="">`;
+  const cardImg = `<img border="0" width="378" height="189" style="width:378px;height:189px;max-width:378px;max-height:189px" src="${person.card}" alt="">`;
   const imageLine = `<p style="${P}">${headshotImg}${cardImg}</p>`;
 
   // Ted and Paul: pictures only, nothing above or below them.
@@ -192,6 +198,10 @@ function signatureHTML(person, withHeadshot) {
 
 // Returns true only if the clipboard actually took the data. Never fails silently:
 // a false return puts the signature on screen so it can be selected and copied by hand.
+const IS_PHONE = window.matchMedia
+  ? window.matchMedia("(hover: none) and (pointer: coarse)").matches
+  : /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
 async function copyRichHTML(html, plainFallback) {
   // ORDER MATTERS. The desktop path is a real selection copy with the clipboard
   // data overridden in the copy event, and it is the one Outlook takes cleanly.
@@ -321,8 +331,17 @@ function renderRows() {
       const ok = await copyRichHTML(html, person.name + "\n" + person.title);
 
       if (ok) {
-        manual.style.display = "none";
-        manual.innerHTML = "";
+        // On a phone the signature stays on screen even after a successful copy, because a
+        // phone can report a clean write and still give Outlook nothing to paste. Verifying
+        // the clipboard directly would cost a permission prompt; the box costs nothing.
+        if (IS_PHONE) {
+          manual.innerHTML = '<div class="manual-label">If Outlook offers no Paste, copy it from here</div>' +
+            '<div class="manual-box" contenteditable="true">' + html + "</div>";
+          manual.style.display = "block";
+        } else {
+          manual.style.display = "none";
+          manual.innerHTML = "";
+        }
         copyBtn.classList.add("copied");
         const original = copyBtn.textContent.trim();
         copyBtn.lastChild.textContent = " Copied";
